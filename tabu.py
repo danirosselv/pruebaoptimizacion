@@ -1,40 +1,50 @@
 """
 tabu.py
 =======
-Metaheuristica TABU SEARCH para el ruteo + asignacion de compartimentos.
-
-Idea general de Tabu Search (Glover, 1986):
-  - Se parte de una solucion inicial.
-  - En cada iteracion se exploran TODOS los vecinos (soluciones parecidas) y se
-    elige el MEJOR, aunque empeore (eso permite escapar de optimos locales).
-  - El movimiento recien hecho se guarda en una "lista tabu" para no deshacerlo
-    enseguida y evitar ciclar.
-  - Criterio de aspiracion: si un movimiento tabu mejora el mejor global, se acepta.
+Metaheuristica Tabu Search para el ruteo y la asignacion de compartimentos.
 """
 
 import random
-from modelo import (ESTACIONES, evaluar, distancia_ruta)
 
-random.seed(42)
+from modelo import ESTACIONES, evaluar
 
 COMBOS_COMP = [{"C0": "R", "C1": "D"}, {"C0": "D", "C1": "R"}]
+PENALIZACION_INF_DEFECTO = 100000
 
 
-def costo_penalizado(sol):
-    """Costo usado por Tabu Search. Si la solucion es infactible se le suma una
-    penalizacion grande para empujar la busqueda hacia la zona factible."""
+def costo_penalizado(sol, penalizacion_inf=PENALIZACION_INF_DEFECTO):
+    """Costo usado por Tabu Search.
+
+    Las soluciones infactibles reciben una penalizacion alta para orientar la
+    busqueda hacia la zona factible sin descartar por completo esos estados.
+    """
     ev = evaluar(sol)
     costo = ev["costo"]
     if not ev["factible"]:
-        costo += 100000  # penalizacion por infactibilidad (estabilidad/ventanas/cobertura)
+        costo += penalizacion_inf
     return costo, ev
 
 
 def solucion_inicial():
-    """Asignacion sencilla y valida en cobertura: estaciones 1-2 a T1, 3-4 a T2."""
+    """Solucion base reproducible usada en el primer arranque."""
     return {
         "T1": {"ruta": [1, 2], "comp": {"C0": "R", "C1": "D"}},
         "T2": {"ruta": [3, 4], "comp": {"C0": "R", "C1": "D"}},
+    }
+
+
+def solucion_aleatoria(rng):
+    """Construye una solucion de cobertura completa para los reinicios."""
+    estaciones = list(ESTACIONES)
+    rng.shuffle(estaciones)
+    corte = rng.randint(0, len(estaciones))
+    ruta_t1 = estaciones[:corte]
+    ruta_t2 = estaciones[corte:]
+    comp_t1 = dict(rng.choice(COMBOS_COMP))
+    comp_t2 = dict(rng.choice(COMBOS_COMP))
+    return {
+        "T1": {"ruta": ruta_t1, "comp": comp_t1},
+        "T2": {"ruta": ruta_t2, "comp": comp_t2},
     }
 
 
@@ -98,34 +108,92 @@ def vecinos(sol):
     return out
 
 
-def tabu_search(iteraciones=60, tenencia=7, verbose=True):
-    """Ejecuta Tabu Search y devuelve (mejor_sol, mejor_eval, historial)."""
-    actual = solucion_inicial()
-    costo_actual, ev_actual = costo_penalizado(actual)
-    mejor, mejor_costo, mejor_ev = actual, costo_actual, ev_actual
+def tabu_search(iteraciones=60, tenencia=7, reinicios=0, semilla=42,
+                penalizacion_inf=PENALIZACION_INF_DEFECTO, return_meta=False):
+    """Ejecuta Tabu Search con reinicios reproducibles.
 
-    lista_tabu = {}          # clave -> iteracion en que deja de ser tabu
-    historial = [mejor_costo]
+    `reinicios` indica la cantidad de arranques adicionales despues del inicial.
+    """
+    rng = random.Random(semilla)
+    historial = []
+    meta_reinicios = []
+    mejor_global = None
+    mejor_costo_global = None
+    mejor_eval_global = None
 
-    for it in range(1, iteraciones + 1):
-        mejor_vecino, mejor_vecino_costo, mejor_vecino_ev, mejor_clave = None, None, None, None
-        for vec, _mov in vecinos(actual):
-            k = clave(vec)
-            cv, ev = costo_penalizado(vec)
-            es_tabu = lista_tabu.get(k, 0) > it
-            aspira = cv < mejor_costo                  # criterio de aspiracion
-            if es_tabu and not aspira:
-                continue
-            if mejor_vecino_costo is None or cv < mejor_vecino_costo:
-                mejor_vecino, mejor_vecino_costo = vec, cv
-                mejor_vecino_ev, mejor_clave = ev, k
-        if mejor_vecino is None:
-            break
-        # moverse al mejor vecino admisible
-        actual, costo_actual, ev_actual = mejor_vecino, mejor_vecino_costo, mejor_vecino_ev
-        lista_tabu[mejor_clave] = it + tenencia
-        if costo_actual < mejor_costo:
-            mejor, mejor_costo, mejor_ev = actual, costo_actual, ev_actual
-        historial.append(mejor_costo)
+    total_arranques = reinicios + 1
+    for reinicio in range(total_arranques):
+        actual = solucion_inicial() if reinicio == 0 else solucion_aleatoria(rng)
+        costo_actual, ev_actual = costo_penalizado(actual, penalizacion_inf)
+        costo_inicial_real = ev_actual["costo"]
+        factible_inicial = ev_actual["factible"]
+        mejor_local = actual
+        mejor_costo_local = costo_actual
+        mejor_eval_local = ev_actual
+        lista_tabu = {}
 
-    return mejor, mejor_ev, historial
+        if mejor_costo_global is None or costo_actual < mejor_costo_global:
+            mejor_global = actual
+            mejor_costo_global = costo_actual
+            mejor_eval_global = ev_actual
+        historial.append(mejor_costo_global)
+
+        for it in range(1, iteraciones + 1):
+            mejor_vecino = None
+            mejor_vecino_costo = None
+            mejor_vecino_ev = None
+            mejor_clave = None
+
+            for vec, _mov in vecinos(actual):
+                clave_vecino = clave(vec)
+                costo_vecino, ev_vecino = costo_penalizado(vec, penalizacion_inf)
+                es_tabu = lista_tabu.get(clave_vecino, 0) > it
+                aspira = mejor_costo_global is None or costo_vecino < mejor_costo_global
+                if es_tabu and not aspira:
+                    continue
+                if mejor_vecino_costo is None or costo_vecino < mejor_vecino_costo:
+                    mejor_vecino = vec
+                    mejor_vecino_costo = costo_vecino
+                    mejor_vecino_ev = ev_vecino
+                    mejor_clave = clave_vecino
+
+            if mejor_vecino is None:
+                break
+
+            actual = mejor_vecino
+            costo_actual = mejor_vecino_costo
+            ev_actual = mejor_vecino_ev
+            lista_tabu[mejor_clave] = it + tenencia
+
+            if costo_actual < mejor_costo_local:
+                mejor_local = actual
+                mejor_costo_local = costo_actual
+                mejor_eval_local = ev_actual
+            if mejor_costo_global is None or costo_actual < mejor_costo_global:
+                mejor_global = actual
+                mejor_costo_global = costo_actual
+                mejor_eval_global = ev_actual
+
+            historial.append(mejor_costo_global)
+
+        meta_reinicios.append({
+            "reinicio": reinicio,
+            "costo_inicial_real": costo_inicial_real,
+            "factible_inicial": factible_inicial,
+            "mejor_costo_penalizado": mejor_costo_local,
+            "mejor_costo_real": mejor_eval_local["costo"],
+            "factible": mejor_eval_local["factible"],
+        })
+
+    if return_meta:
+        meta = {
+            "iteraciones": iteraciones,
+            "reinicios": reinicios,
+            "tenencia": tenencia,
+            "semilla": semilla,
+            "penalizacion_inf": penalizacion_inf,
+            "arranques": meta_reinicios,
+        }
+        return mejor_global, mejor_eval_global, historial, meta
+
+    return mejor_global, mejor_eval_global, historial

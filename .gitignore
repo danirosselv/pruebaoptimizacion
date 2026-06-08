@@ -2,3 +2,5 @@ __pycache__/
 *.pyc
 .ipynb_checkpoints/
 pg-*.png
+.venv/
+qa_*.png
