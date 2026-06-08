@@ -22,7 +22,7 @@ El notebook ya queda guardado con salidas visibles y puede volver a ejecutarse d
 ## Resultados esperados principales
 
 - La solucion propuesta por el operador presenta una violacion de estabilidad en T2.
-- Bajo cargas corregidas para shortage cero, el costo operacional de la propuesta del operador es `$1200`; sin embargo, los fill ratios declarados no son consistentes con shortage cero.
+- Bajo cargas corregidas para shortage cero, el costo operacional de la propuesta del operador es $1200; sin embargo, los fill ratios declarados no son consistentes con shortage cero.
 - La mejor solucion encontrada mediante Tabu Search es:
   - `T1: D->1->2->4->D`
   - `T2: D->3->D`
