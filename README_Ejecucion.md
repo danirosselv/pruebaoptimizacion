@@ -2,7 +2,7 @@
 
 ## Archivos principales
 
-- Archivo principal: `Solemne_Optimizacion_Respuesta.pdf`
+- Archivo principal: `Solemne_Optimizacion_Tabu.pdf`
 - Evidencia computacional: `Solemne_Optimizacion_Tabu_Search.ipynb`
 
 ## Instalacion
@@ -32,4 +32,4 @@ El notebook ya queda guardado con salidas visibles y puede volver a ejecutarse d
 
 ## Nota metodologica
 
-La entrega utiliza Tabu Search en Python como reemplazo de AMPL para la resolucion computacional. La formulacion matematica se conserva en `Solemne_Optimizacion_Respuesta.pdf` y la implementacion reproducible se adjunta en `Solemne_Optimizacion_Tabu_Search.ipynb`.
+La entrega utiliza Tabu Search en Python como reemplazo de AMPL para la resolucion computacional. La formulacion matematica se conserva en `Solemne_Optimizacion_Tabu.pdf` y la implementacion reproducible se adjunta en `Solemne_Optimizacion_Tabu_Search.ipynb`.
