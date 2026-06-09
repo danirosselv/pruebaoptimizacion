@@ -2,7 +2,7 @@
 
 ## Archivos principales
 
-- Archivo principal: `Solemne_Optimizacion_Respuesta.pdf`
+- Archivo principal: `Solemne_Optimizacion_Tabu.pdf`
 - Evidencia computacional: `Solemne_Optimizacion_Tabu_Search.ipynb`
 
 ## Instalacion
@@ -22,7 +22,7 @@ El notebook ya queda guardado con salidas visibles y puede volver a ejecutarse d
 ## Resultados esperados principales
 
 - La solucion propuesta por el operador presenta una violacion de estabilidad en T2.
-- Bajo cargas corregidas para shortage cero, el costo operacional de la propuesta del operador es `$1200`; sin embargo, los fill ratios declarados no son consistentes con shortage cero.
+- Bajo cargas corregidas para shortage cero, el costo operacional de la propuesta del operador es $1200; sin embargo, los fill ratios declarados no son consistentes con shortage cero.
 - La mejor solucion encontrada mediante Tabu Search es:
   - `T1: D->1->2->4->D`
   - `T2: D->3->D`
@@ -32,4 +32,4 @@ El notebook ya queda guardado con salidas visibles y puede volver a ejecutarse d
 
 ## Nota metodologica
 
-La entrega utiliza Tabu Search en Python como reemplazo de AMPL para la resolucion computacional. La formulacion matematica se conserva en `Solemne_Optimizacion_Respuesta.pdf` y la implementacion reproducible se adjunta en `Solemne_Optimizacion_Tabu_Search.ipynb`.
+La entrega utiliza Tabu Search en Python como reemplazo de AMPL para la resolucion computacional. La formulacion matematica se conserva en `Solemne_Optimizacion_Tabu.pdf` y la implementacion reproducible se adjunta en `Solemne_Optimizacion_Tabu_Search.ipynb`.
